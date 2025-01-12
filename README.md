@@ -1,2 +1,3 @@
 # specbolt
-Yet another ZX Spectrum Emulator
+
+Yet another ZX Spectrum Emulator. Part of a project for an upcoming C++ talk.
