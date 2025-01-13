@@ -7,4 +7,3 @@ enable_testing()
 add_subdirectory(test)
 
 add_executable(specbolt main.cpp)
-

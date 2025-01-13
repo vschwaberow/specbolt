@@ -16,7 +16,7 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: "19.1"
-     - name: Install dependencies
+      - name: Install dependencies
         run: |
           conan install . --build=missing
           conan install . --build=missing --settings build_type=Debug
