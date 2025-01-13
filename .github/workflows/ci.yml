@@ -13,6 +13,8 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.30.x'
+      - name: Install ninja-build tool
+        uses: seanmiddleditch/gha-setup-ninja@v5
       - name: install clang
         run: |
           wget https://apt.llvm.org/llvm.sh
