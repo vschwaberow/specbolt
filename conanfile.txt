@@ -1,9 +1,6 @@
 [requires]
 catch2/3.8.0
 
-[tool_requires]
-cmake/3.30.1
-
 [generators]
 CMakeDeps
 CMakeToolchain

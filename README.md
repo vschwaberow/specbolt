@@ -25,4 +25,4 @@ os=Linux
 ```
 
 - `conan install . --build=missing`
-- `conan install , --build=missing --settings=build_type=Debug`
+- `conan install . --build=missing --settings=build_type=Debug`

@@ -1,0 +1,29 @@
+name: specbolt CI
+on: [ push ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.30.x'
+      - name: Use cmake
+        run: cmake --version
+      - name: Install Conan
+        uses: turtlebrowser/get-conan@main
+      - name: Set up Clang
+        run: |
+          curl -sL https://compiler-explorer.s3.us-east-1.amazonaws.com/opt/clang-19.1.0.tar.xz | tar Jxf -
+          echo $PWD/clang+llvm-19.1.0/bin >> $GITHUB_PATH
+      - name: Install dependencies
+        run: |
+          conan install . --build=missing
+          conan install . --build=missing --settings build_type=Debug
+      - name: Build
+        run: |
+          cmake . --preset=conan-release
+          cmake --build --preset=conan-release
+          cmake --build --target test --preset=conan-release
