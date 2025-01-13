@@ -10,14 +10,15 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.30.x'
-      - name: Install Conan
-        uses: turtlebrowser/get-conan@main
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "19.1"
+          version: "19.1.6"
+      - name: Install Conan
+        uses: turtlebrowser/get-conan@main
       - name: Install dependencies
         run: |
+          conan config install .conan
           conan install . --build=missing
           conan install . --build=missing --settings build_type=Debug
       - name: Build
