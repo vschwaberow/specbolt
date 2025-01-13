@@ -5,15 +5,22 @@
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+#include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <format>
 #include <memory>
 #include <stdexcept>
+#include <thread>
+#include <utility>
 
 #include <X11/extensions/XShm.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
+#include "ShmId.hpp"
+
+namespace specbolt {
 class X11Window {
   std::uint32_t width_;
   std::uint32_t height_;
@@ -22,18 +29,22 @@ class X11Window {
     void operator()(Display *display) const { XCloseDisplay(display); }
   };
   std::unique_ptr<Display, XCloseDisplayer> display_;
-  int shm_id_{}; // TODO wrap in a smart pointer, rm_shmid
+  ShmId shm_id_;
   char *image_data_{};
   XImage *image_{};
   XShmSegmentInfo shm_info_{};
 
   // TODO destruction of these:
-  Window window_;
-  Atom atom_delete_message_;
-  GC gc_;
+  // Need to; free the GC, unmap the window, destroy the window and then detach the shm (seems the wrong wqay around)?
+  // then destroy the XImage; then delete the shm...
+  Window window_{};
+  Atom atom_delete_message_{};
+  GC gc_{};
+
+  bool closed_{};
 
 public:
-  X11Window(std::uint32_t width, std::uint32_t height) : width_(width), height_(height) {
+  X11Window(const std::uint32_t width, const std::uint32_t height) : width_(width), height_(height) {
     display_.reset(XOpenDisplay(nullptr));
     Bool bool_result{};
     XkbSetDetectableAutoRepeat(display_.get(), true, &bool_result);
@@ -50,18 +61,15 @@ public:
     const auto black_pixel = BlackPixel(display_.get(), screen);
     const auto white_pixel = WhitePixel(display_.get(), screen);
 
-    shm_id_ = shmget(IPC_PRIVATE, width_ * height_ * 4, IPC_CREAT | 0600);
-    if (shm_id_ < 0) {
-      throw std::runtime_error(std::format("Failed to create shared memory: {}", errno));
-    }
-    image_data_ = static_cast<char *>(shmat(shm_id_, nullptr, 0));
+    shm_id_ = ShmId(width_ * height_ * 4);
+    image_data_ = static_cast<char *>(shmat(shm_id_.id(), nullptr, 0));
 
-    image_ = XShmCreateImage(display_.get(), visual, depth, ZPixmap, image_data_, &shm_info_, width_, height_);
+    image_ = XShmCreateImage(display_.get(), visual, depth, ZPixmap, nullptr, &shm_info_, width_, height_);
     if (!image_) {
       throw std::runtime_error("Unable to create shared memory image");
     }
 
-    shm_info_.shmid = shm_id_;
+    shm_info_.shmid = shm_id_.id(); // mayyybe we 'release' here? TODO look into this
     shm_info_.shmaddr = image_data_;
     shm_info_.readOnly = false;
     image_->data = image_data_;
@@ -70,23 +78,27 @@ public:
       throw std::runtime_error("XShmAttach failed");
     }
 
-    // something with error handlers...
+    static bool error_handler_called = false;
+    static XErrorEvent last_error_event{};
+    error_handler_called = false;
+    const auto old_error_handler = XSetErrorHandler(+[](Display *, XErrorEvent *error_event) {
+      if (!std::exchange(error_handler_called, true)) {
+        last_error_event = *error_event;
+      }
+      return 0;
+    });
     const auto sync_ret = XSync(display_.get(), false);
-    // something
-
-    ///// probably not needed if we smart wrapper the shnid.
-    // rm_shmid();
-    shmctl(shm_id_, IPC_RMID, nullptr);
-    shm_id_ = -1;
-    /////
-
-    if (sync_ret != 1) {
+    XSetErrorHandler(old_error_handler);
+    shm_id_.reset(); // see above re: release
+    if (!sync_ret) {
       throw std::runtime_error("XSync failed");
     }
 
-    // something with last error handlers...
+    if (error_handler_called) {
+      throw std::runtime_error(std::format("XShmAttach failed: error code {}", last_error_event.error_code));
+    }
 
-    window_ = XCreateSimpleWindow(display_.get(), root_window, 0, 0, width_, height_, 1, black_pixel, black_pixel);
+    window_ = XCreateSimpleWindow(display_.get(), root_window, 10, 10, width_, height_, 1, black_pixel, black_pixel);
     if (!window_) {
       throw std::runtime_error("Failed to create simple window");
     }
@@ -115,11 +127,66 @@ public:
     if (const auto res = XFlush(display_.get()); res == 0) {
       throw std::runtime_error("XFlush failed");
     }
+
+    if (const auto res = XStoreName(display_.get(), window_, "specbolt ZX Spectrum Emulator"); res == 0) {
+      throw std::runtime_error("Failed to store name");
+    }
+  }
+
+  [[nodiscard]] auto closed() const { return closed_; }
+  [[nodiscard]] auto width() const { return width_; }
+  [[nodiscard]] auto height() const { return height_; }
+  [[nodiscard]] auto *image_data() const { return image_data_; }
+
+  void process_pending() {
+    while (XPending(display_.get())) {
+      XEvent event;
+      XNextEvent(display_.get(), &event);
+      switch (event.type) {
+        case KeyPress:
+          // TODO
+          break;
+        case KeyRelease:
+          // TODO
+          break;
+        case FocusIn:
+          // TODO
+          break;
+        case FocusOut:
+          // TODO
+          break;
+        case ClientMessage:
+          if (static_cast<Atom>(event.xclient.data.l[0]) == atom_delete_message_) {
+            closed_ = true;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  void present_buffer() {
+    if (!XShmPutImage(display_.get(), window_, gc_, image_, 0, 0, 0, 0, width_, height_, false)) {
+      throw std::runtime_error("XShmPutImage failed");
+    }
+    if (!XSync(display_.get(), false)) {
+      throw std::runtime_error("XSync failed");
+    }
+    // beebjit talks about checking for events here during rendering, and delays therein.
+    process_pending();
   }
 };
 
+} // namespace specbolt
 
 int main() {
-  X11Window window(640, 480);
-  while (true) {}
+  specbolt::X11Window window(640, 480);
+  unsigned char rgb = 0xff;
+  while (!window.closed()) {
+    std::this_thread::sleep_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(16));
+    memset(window.image_data(), rgb, window.width() * window.height() * 4);
+    window.present_buffer();
+    rgb++;
+  }
 }

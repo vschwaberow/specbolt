@@ -13,5 +13,5 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wconversion)
 add_subdirectory(test)
 
 find_package(X11 REQUIRED)
-add_executable(specbolt main.cpp)
+add_executable(specbolt main.cpp ShmId.cpp ShmId.hpp)
 target_link_libraries(specbolt GSL X11::X11 X11::Xext)
