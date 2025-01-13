@@ -15,15 +15,8 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 19
-      - name: Install Conan
-        uses: turtlebrowser/get-conan@main
-      - name: Install dependencies
-        run: |
-          conan config install .conan
-          conan install . --build=missing --settings build_type=Release
-          conan install . --build=missing --settings build_type=Debug
       - name: Build
         run: |
-          cmake . --preset=conan-release
+          env CC=clang CXX=clang++ cmake . --preset=conan-release
           cmake --build --preset=conan-release
           cmake --build --target test --preset=conan-release
