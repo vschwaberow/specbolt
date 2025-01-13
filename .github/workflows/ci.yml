@@ -10,10 +10,10 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.30.x'
-      - name: install clang
-        run: |
-          curl -sL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          sudo apt-get install -y clang-19 clang++-19
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "19.1.5"
       - name: Install Conan
         uses: turtlebrowser/get-conan@main
       - name: Install dependencies
