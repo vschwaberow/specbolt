@@ -4,26 +4,25 @@ on: [ push ]
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [ Debug, RelWithDebInfo ]
     steps:
       - uses: actions/checkout@v4
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.30.x'
+      - name: Install ninja-build tool
+        uses: seanmiddleditch/gha-setup-ninja@v5
       - name: install clang
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 19
-      - name: Install Conan
-        uses: turtlebrowser/get-conan@main
-      - name: Install dependencies
-        run: |
-          conan config install .conan
-          conan install . --build=missing --settings build_type=Release
-          conan install . --build=missing --settings build_type=Debug
       - name: Build
         run: |
-          cmake . --preset=conan-release
-          cmake --build --preset=conan-release
-          cmake --build --target test --preset=conan-release
+          mkdir build
+          env CC=clang CXX=clang++ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake --build build
+          cmake --build build --target test
