@@ -4,6 +4,9 @@ on: [ push ]
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [ Debug, RelWithDebInfo ]
     steps:
       - uses: actions/checkout@v4
       - name: Setup cmake
@@ -17,6 +20,7 @@ jobs:
           sudo ./llvm.sh 19
       - name: Build
         run: |
-          env CC=clang CXX=clang++ cmake . --preset=conan-release
-          cmake --build --preset=conan-release
-          cmake --build --target test --preset=conan-release
+          mkdir build
+          env CC=clang CXX=clang++ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake --build build
+          cmake --build build --target test
