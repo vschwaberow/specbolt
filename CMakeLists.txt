@@ -3,4 +3,7 @@ project(specbolt)
 
 set(CMAKE_CXX_STANDARD 26)
 
+add_subdirectory(test)
+
 add_executable(specbolt main.cpp)
+

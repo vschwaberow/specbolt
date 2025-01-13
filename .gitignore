@@ -31,5 +31,8 @@
 *.out
 *.app
 
-# Evertyhing in output directory
-/out
+# Everything in output directory
+/build
+
+# Maybe this too?
+/CMakeUserPresets.json
