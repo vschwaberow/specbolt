@@ -13,7 +13,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "19.1.5"
+          version: "19.1.0"
       - name: Install Conan
         uses: turtlebrowser/get-conan@main
       - name: Install dependencies
