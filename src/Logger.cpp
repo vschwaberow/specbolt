@@ -40,13 +40,13 @@ void Logger::SetLogFormat(const std::string& format) {
     log_format_ = format;
 }
 
-void Logger::Log(LogLevel level, const std::string& message) {
+void Logger::Log(LogLevel level, const std::string& message, const std::string& class_name, const std::string& method_name) {
     if (level < log_level_) {
         return;
     }
 
     std::ostringstream log_stream;
-    log_stream << FormatLogMessage(level, message);
+    log_stream << FormatLogMessage(level, message, class_name, method_name);
 
     std::string log_message = log_stream.str();
 
@@ -57,9 +57,13 @@ void Logger::Log(LogLevel level, const std::string& message) {
     cv_.notify_one();
 }
 
-std::string Logger::FormatLogMessage(LogLevel level, const std::string& message) {
+std::string Logger::FormatLogMessage(LogLevel level, const std::string& message, const std::string& class_name, const std::string& method_name) {
     std::ostringstream ss;
-    ss << GetTimestamp() << " " << GetLogLevelString(level) << " " << message;
+    ss << GetTimestamp() << " " << GetLogLevelString(level);
+    if (!class_name.empty() && !method_name.empty()) {
+        ss << " [" << class_name << "::" << method_name << "]";
+    }
+    ss << " " << message;
     return ss.str();
 }
 

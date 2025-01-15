@@ -31,7 +31,7 @@ public:
     void SetLogLevel(LogLevel level);
     void SetLogFile(const std::string& file_path);
     void SetLogFormat(const std::string& format);
-    void Log(LogLevel level, const std::string& message);
+    void Log(LogLevel level, const std::string& message, const std::string& class_name = "", const std::string& method_name = "");
 
 private:
     Logger();
@@ -39,7 +39,7 @@ private:
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
-    std::string FormatLogMessage(LogLevel level, const std::string& message);
+    std::string FormatLogMessage(LogLevel level, const std::string& message, const std::string& class_name, const std::string& method_name);
     std::string GetTimestamp();
     std::string GetLogLevelString(LogLevel level);
     std::string GetColorCode(LogLevel level);
