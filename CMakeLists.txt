@@ -27,5 +27,6 @@ add_subdirectory(test)
 find_package(X11 REQUIRED)
 add_executable(specbolt src/main.cpp src/ShmId.cpp src/ShmId.hpp
         src/X11MainWindow.cpp
-        src/X11MainWindow.hpp)
+        src/X11MainWindow.hpp
+        src/cpu/Z80.cpp)
 target_link_libraries(specbolt GSL X11::X11 X11::Xext)
