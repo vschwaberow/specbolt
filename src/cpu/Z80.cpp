@@ -32,7 +32,11 @@ void Z80::DecodeAndExecute(uint8_t opcode) {
     case 0x00:  // NOP
       break;
     case 0x01:  // LD BC,nn
-      bc_ = memory_.Data()[pc_++] | (memory_.Data()[pc_++] << 8);
+      {
+        uint8_t low = memory_.Data()[pc_++];
+        uint8_t high = memory_.Data()[pc_++];
+        bc_ = low | (high << 8);
+      }
       break;
     // TODO: Add more opcodes here
     default:
