@@ -40,6 +40,7 @@ find_package(X11 REQUIRED)
 add_executable(specbolt
     src/main.cpp
     src/ShmId.cpp
+    src/Logger.cpp
     src/X11MainWindow.cpp
     src/cpu/Z80.cpp
 )
