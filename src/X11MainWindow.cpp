@@ -1,9 +1,7 @@
 #include "X11MainWindow.hpp"
 
 #include <X11/Xlib.h>
-
 #include <X11/extensions/XShm.h>
-
 #include <X11/XKBlib.h>
 #include <chrono>
 #include <cstdint>
@@ -12,7 +10,6 @@
 #include <stdexcept>
 #include <thread>
 #include <utility>
-
 #include <sys/shm.h>
 
 #include "ShmId.hpp"
@@ -32,7 +29,8 @@ X11MainWindow::GraphicsContext::~GraphicsContext() {
   }
 }
 
-X11MainWindow::X11MainWindow(const std::uint32_t width, const std::uint32_t height) : width_(width), height_(height) {
+X11MainWindow::X11MainWindow(std::uint32_t width, std::uint32_t height)
+    : width_(width), height_(height) {
   display_.reset(XOpenDisplay(nullptr));
   Bool bool_result{};
   XkbSetDetectableAutoRepeat(display_.get(), true, &bool_result);
@@ -57,7 +55,7 @@ X11MainWindow::X11MainWindow(const std::uint32_t width, const std::uint32_t heig
     throw std::runtime_error("Unable to create shared memory image");
   }
 
-  shm_info_.shmid = shm_id_.id(); // mayyybe we 'release' here? TODO look into this
+  shm_info_.shmid = shm_id_.id();
   shm_info_.shmaddr = image_data_;
   shm_info_.readOnly = false;
   image_->data = image_data_;
@@ -77,7 +75,7 @@ X11MainWindow::X11MainWindow(const std::uint32_t width, const std::uint32_t heig
   });
   const auto sync_ret = XSync(display_.get(), false);
   XSetErrorHandler(old_error_handler);
-  shm_id_.reset(); // see above re: release
+  shm_id_.reset();
   if (!sync_ret) {
     throw std::runtime_error("XSync failed");
   }
@@ -90,6 +88,9 @@ X11MainWindow::X11MainWindow(const std::uint32_t width, const std::uint32_t heig
   if (!window_) {
     throw std::runtime_error("Failed to create simple window");
   }
+
+  SetWindowHints();
+
   atom_delete_message_ = XInternAtom(display_.get(), "WM_DELETE_WINDOW", false);
   if (const auto status_ret = XSetWMProtocols(display_.get(), window_, &atom_delete_message_, 1); status_ret == 0) {
     throw std::runtime_error("Failed to set WM protocols");
@@ -116,6 +117,28 @@ X11MainWindow::X11MainWindow(const std::uint32_t width, const std::uint32_t heig
   if (const auto res = XStoreName(display_.get(), window_, "specbolt ZX Spectrum Emulator"); res == 0) {
     throw std::runtime_error("Failed to store name");
   }
+}
+
+void X11MainWindow::SetWindowHints() {
+  XSizeHints hints;
+  hints.flags = PPosition | PSize | PMinSize | PMaxSize;
+  hints.x = 100;
+  hints.y = 100;
+  hints.width = width_;
+  hints.height = height_;
+  hints.min_width = 320;
+  hints.min_height = 240;
+  hints.max_width = 1920;
+  hints.max_height = 1080;
+
+  XSetWMNormalHints(display_.get(), window_, &hints);
+
+  XWMHints wm_hints;
+  wm_hints.flags = InputHint | StateHint;
+  wm_hints.input = True;
+  wm_hints.initial_state = NormalState;
+
+  XSetWMHints(display_.get(), window_, &wm_hints);
 }
 
 void X11MainWindow::process_pending() {
@@ -153,8 +176,7 @@ void X11MainWindow::present_buffer() {
   if (!XSync(display_.get(), false)) {
     throw std::runtime_error("XSync failed");
   }
-  // beebjit talks about checking for events here during rendering, and delays therein.
   process_pending();
 }
 
-} // namespace specbolt
+}

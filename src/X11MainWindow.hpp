@@ -1,9 +1,9 @@
 #pragma once
 
 #include <X11/Xlib.h>
-
 #include <X11/extensions/XShm.h>
-
+#include <X11/XKBlib.h>
+#include <X11/Xutil.h>
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -27,9 +27,6 @@ class X11MainWindow {
   XImage *image_{};
   XShmSegmentInfo shm_info_{};
 
-  // TODO destruction of these:
-  // Need to; free the GC, unmap the window, destroy the window and then detach the shm (seems the wrong wqay around)?
-  // then destroy the XImage; then delete the shm...
   Window window_{};
   Atom atom_delete_message_{};
 
@@ -54,6 +51,8 @@ class X11MainWindow {
 
   bool closed_{};
 
+  void SetWindowHints();
+
 public:
   X11MainWindow(std::uint32_t width, std::uint32_t height);
 
@@ -66,8 +65,7 @@ public:
   [[nodiscard]] auto *image_data() const { return image_data_; }
 
   void process_pending();
-
   void present_buffer();
 };
 
-} // namespace specbolt
+}
