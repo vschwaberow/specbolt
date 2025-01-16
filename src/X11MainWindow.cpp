@@ -124,8 +124,8 @@ void X11MainWindow::SetWindowHints() {
   hints.flags = PPosition | PSize | PMinSize | PMaxSize;
   hints.x = 100;
   hints.y = 100;
-  hints.width = width_;
-  hints.height = height_;
+  hints.width = static_cast<int>(width_);
+  hints.height = static_cast<int>(height_);
   hints.min_width = 320;
   hints.min_height = 240;
   hints.max_width = 1920;
