@@ -1,16 +1,16 @@
 #include "X11MainWindow.hpp"
 
+#include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/XShm.h>
-#include <X11/XKBlib.h>
 #include <chrono>
 #include <cstdint>
 #include <format>
 #include <memory>
 #include <stdexcept>
+#include <sys/shm.h>
 #include <thread>
 #include <utility>
-#include <sys/shm.h>
 
 #include "ShmId.hpp"
 
@@ -29,9 +29,11 @@ X11MainWindow::GraphicsContext::~GraphicsContext() {
   }
 }
 
-X11MainWindow::X11MainWindow(std::uint32_t width, std::uint32_t height)
-    : width_(width), height_(height) {
+X11MainWindow::X11MainWindow(std::uint32_t width, std::uint32_t height) : width_(width), height_(height) {
   display_.reset(XOpenDisplay(nullptr));
+  if (!display_) {
+    throw std::runtime_error("Failed to open display");
+  }
   Bool bool_result{};
   XkbSetDetectableAutoRepeat(display_.get(), true, &bool_result);
   if (!bool_result) {
@@ -179,4 +181,4 @@ void X11MainWindow::present_buffer() {
   process_pending();
 }
 
-}
+} // namespace specbolt
