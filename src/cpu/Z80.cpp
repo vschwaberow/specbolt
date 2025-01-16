@@ -6,9 +6,7 @@
 namespace specbolt {
 namespace cpu {
 
-Z80::Z80() : memory_(65536) {
-  Reset();
-}
+Z80::Z80() : memory_(65536) { Reset(); }
 
 void Z80::Reset() {
   pc_ = 0x0000;
@@ -24,37 +22,35 @@ void Z80::Execute() {
   }
 }
 
-uint8_t Z80::Fetch() {
-  return static_cast<uint8_t>(memory_.Data()[pc_++]);
-}
+uint8_t Z80::Fetch() { return static_cast<uint8_t>(memory_.Data()[pc_++]); }
 
 void Z80::DecodeAndExecute(uint8_t opcode) {
   switch (opcode) {
-    case 0x00:  // NOP
+    case 0x00: // NOP
       NOP();
       break;
-    case 0x01:  // LD BC,nn
+    case 0x01: // LD BC,nn
       LD_BC_nn();
       break;
-    case 0x03:  // INC BC
+    case 0x03: // INC BC
       INC_BC();
       break;
-    case 0x0B:  // DEC BC
+    case 0x0B: // DEC BC
       DEC_BC();
       break;
-    case 0x06:  // LD B,n
+    case 0x06: // LD B,n
       LD_B_n();
       break;
-    case 0x09:  // ADD HL,BC
+    case 0x09: // ADD HL,BC
       ADD_HL_BC();
       break;
-    case 0x0A:  // LD A,(BC)
+    case 0x0A: // LD A,(BC)
       LD_A_BC();
       break;
-    case 0x05:  // DEC B
+    case 0x05: // DEC B
       DEC_B();
       break;
-    case 0x18:  // JR n
+    case 0x18: // JR n
       JR_n();
       break;
     // TODO: Add more opcodes here
@@ -64,14 +60,12 @@ void Z80::DecodeAndExecute(uint8_t opcode) {
   }
 }
 
-void Z80::NOP() {
-  specbolt::Logger::Instance().Log(specbolt::LogLevel::DEBUG, "Executed NOP", "Z80", "NOP");
-}
+void Z80::NOP() { specbolt::Logger::Instance().Log(specbolt::LogLevel::DEBUG, "Executed NOP", "Z80", "NOP"); }
 
 void Z80::LD_BC_nn() {
   uint8_t low = static_cast<uint8_t>(memory_.Data()[pc_++]);
   uint8_t high = static_cast<uint8_t>(memory_.Data()[pc_++]);
-  bc_ = static_cast<uint16_t>(low) | (static_cast<uint16_t>(high) << 8);
+  bc_ = static_cast<uint16_t>(static_cast<uint16_t>(low) | (static_cast<uint16_t>(high) << 8));
   specbolt::Logger::Instance().Log(specbolt::LogLevel::DEBUG, "Executed LD BC,nn", "Z80", "LD_BC_nn");
 }
 
@@ -96,7 +90,8 @@ void Z80::ADD_HL_BC() {
   hl_ = result & 0xFFFF;
   if (result > 0xFFFF) {
     af_ |= 0x10;
-  } else {
+  }
+  else {
     af_ &= ~0x10;
   }
   specbolt::Logger::Instance().Log(specbolt::LogLevel::DEBUG, "Executed ADD HL,BC", "Z80", "ADD_HL_BC");
@@ -122,5 +117,5 @@ void Z80::JR_n() {
   specbolt::Logger::Instance().Log(specbolt::LogLevel::DEBUG, "Executed JR n", "Z80", "JR_n");
 }
 
-}
-}
+} // namespace cpu
+} // namespace specbolt
